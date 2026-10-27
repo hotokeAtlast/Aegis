@@ -187,6 +187,17 @@ Web Service, not a Static Site. The repo already contains `render.yaml`
   then push the new bundle with the source — Render does not rebuild
   the client, because that build needs Muse's SDK tooling.
 - **Health check:** `GET /healthz` returns `{"ok":true}`.
+- **Keeping it alive on free (cron ping):** Render's free plan spins
+  the service down after 15 minutes idle. To keep it awake, point an
+  external cron service (e.g. cron-job.org) at
+  `GET https://<your-service>.onrender.com/api/keep-alive` every
+  10 minutes (`/api/ping` is an alias). It returns
+  `{"ok":true,"service":"aegis","timestamp":"...","uptimeSeconds":...}`,
+  touches no database and runs no action, so a ping can never mutate
+  an event. Note the cost of always-on: a service pinged around the
+  clock uses roughly 720 of Render's 750 free instance hours per
+  workspace per month, so this only fits if Aegis is your only (or
+  main) free service there.
 
 ## Milestones
 

@@ -6,6 +6,12 @@
 //   GET  /            -> client/dist/index.html (the React app)
 //   GET  /assets/*    -> client/dist/assets/* (built JS/CSS)
 //   GET  /healthz     -> {"ok":true} (Render health check)
+//   GET  /api/keep-alive, /api/ping
+//                    -> {"ok":true, "service":"aegis", ...} (cron keep-alive
+//                       endpoint: ping this every 10 minutes from an external
+//                       cron service to stop Render's free plan spinning the
+//                       service down after 15 minutes idle. Lightweight —
+//                       it does not touch the database or run any action.)
 //   POST /actions     -> {"action": "<name>", "args": {...}} -> {"data": {...}}
 //                        (the exact protocol client/src/api.ts uses via
 //                        createActionClient: POST ./actions, read body.data,
@@ -110,6 +116,21 @@ const server = Bun.serve({
 
     if (pathname === "/healthz") {
       return Response.json({ ok: true });
+    }
+
+    // Cron keep-alive endpoint. Any external cron service (e.g. cron-job.org)
+    // can GET this every 10 minutes; each hit counts as inbound traffic, so
+    // Render's free plan does not spin the service down after 15 min idle.
+    // Deliberately database-free and action-free: a ping should never be
+    // able to mutate an event, and it should stay cheap even if a cron
+    // service retries it aggressively.
+    if (req.method === "GET" && (pathname === "/api/keep-alive" || pathname === "/api/ping")) {
+      return Response.json({
+        ok: true,
+        service: "aegis",
+        timestamp: new Date().toISOString(),
+        uptimeSeconds: Math.round(process.uptime()),
+      });
     }
 
     if (req.method === "POST" && pathname === "/actions") {
