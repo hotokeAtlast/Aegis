@@ -5,29 +5,18 @@
 # persistent disk and environment variables in one step, instead of setting
 # each one up by hand in the dashboard.
 #
-# IMPORTANT — READ BEFORE YOU HIT DEPLOY:
-# This blueprint declares the intended Render service, but it is NOT yet a
-# working deploy of Aegis as-is. Aegis currently runs on Muse's space runtime:
-# its server actions are defined with @hatch/space-sdk and served by that
-# runtime, and its database is a local app.db file. There is no standalone
-# Bun server entrypoint in this repo yet, so the Dockerfile CMD is
-# intentionally a clear placeholder that fails fast, rather than a fake
-# server that would serve a broken app.
+# What runs on Render: server/standalone.ts (Bun), serving the prebuilt
+# client in client/dist and the same server actions as the Muse app over
+# POST /actions, with SQLite at DATABASE_PATH on the persistent disk.
+# The Dockerfile swaps the Muse-only space-sdk dependency for the
+# standalone shim (standalone/space-sdk-shim) inside the image only.
 #
-# What is still needed before a first successful Render deploy:
-#   1. A standalone server entrypoint that serves client/dist, handles
-#      POST /actions with a drizzle SQLite context (ctx.db), and runs the
-#      drizzle migrations in drizzle/ against DATABASE_PATH on first boot.
-#   2. That entrypoint's path put into the Dockerfile CMD.
-#   3. A Gemini key set in the Render dashboard (see GEMINI_API_KEY below) —
-#      never committed to this repo. The app's Settings screen stores the key
-#      server-side in the database on the persistent disk once the server
-#      exists, so the env var is only needed if the standalone server is
-#      wired to read it.
-#
-# Until step 1 lands, import this blueprint with autoDeploy: false (below)
-# so Render creates the service without immediately running a deploy that
-# is known to fail. Flip autoDeploy to true once the Dockerfile CMD is real.
+# Gemini key: never commit one to this repo. Either set GEMINI_API_KEY in
+# the Render dashboard (sync: false below, so Render prompts for it) and
+# it is seeded into app_settings on first boot, or leave it unset and add
+# the key later in the app's Settings screen — it is stored server-side
+# in the database on the persistent disk either way. Without a key, Aegis
+# falls back to its deterministic template plan, exactly as in Muse.
 
 services:
   - type: web
@@ -36,8 +25,8 @@ services:
     dockerfilePath: ./Dockerfile
     plan: free
     region: singapore
-    autoDeploy: false
-    healthCheckPath: /
+    autoDeploy: true
+    healthCheckPath: /healthz
     disks:
       - name: aegis-data
         mountPath: /data

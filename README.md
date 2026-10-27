@@ -156,6 +156,31 @@ its wizard step — never an opaque 422.
   ZIP** or `git clone`. Then `bun install`, `bun test`, and add your own
   key in Settings.
 
+## Deploying on Render
+
+Aegis is a fullstack app, not a static site, so deploy it as a Render
+Web Service, not a Static Site. The repo already contains `render.yaml`
+(Blueprint: free plan, Singapore, 1 GB persistent disk at `/data`,
+`DATABASE_PATH=/data/app.db`) and a `Dockerfile` (Bun).
+
+- **Import:** Render → New → Blueprint → connect this repo. Render
+  reads `render.yaml` and creates the service, disk and env vars.
+  Set `GEMINI_API_KEY` in the Render dashboard when prompted (it is
+  `sync: false` in the yaml, so no key is ever committed); on first
+  boot the server seeds it into Settings, where it can be changed or
+  cleared in the app. Without a key, Aegis uses its template plan.
+- **How it runs:** `server/standalone.ts` serves the prebuilt client
+  in `client/dist` and the same server actions as the Muse app over
+  `POST /actions`, with SQLite migrations from `drizzle/` applied on
+  boot. The Dockerfile swaps the Muse-only space-sdk dependency for
+  `standalone/space-sdk-shim` (a minimal defineAction/z shim, documented
+  in that file) inside the image only — the repo's `package.json`
+  keeps the real Muse SDK, so the Muse artifact build is unaffected.
+- **If you change the client:** rebuild `client/dist` in Muse first,
+  then push the new bundle with the source — Render does not rebuild
+  the client, because that build needs Muse's SDK tooling.
+- **Health check:** `GET /healthz` returns `{"ok":true}`.
+
 ## Milestones
 
 1. Wizard + INR budget engine, template plan.

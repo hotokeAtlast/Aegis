@@ -1,0 +1,15 @@
+node_modules
+.bun-cache
+.space-build
+.git
+app.db
+app.db-shm
+app.db-wal
+audits
+.harness
+client/src
+client/index.html
+client/build.mjs
+tests
+server/dist
+*.tsbuildinfo
