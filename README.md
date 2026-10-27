@@ -35,6 +35,38 @@ from the entry screen, Home, or any plan.
   highlight box (including the wizard's Live per-guest range) pairs its
   background with a readable foreground in both schemes (Milestone 5 fix).
 
+## Architecture (module map)
+
+Structure-only note: the app was split from two large files
+(`client/src/App.tsx`, `server/src/actions.ts`) into focused modules with
+no behaviour change — same actions, schemas, maths, prompts and strings.
+- `client/src/App.tsx` — thin shell: owns all screen/form state, renders one screen at a time.
+- `client/src/screens/EntryScreen.tsx` — name-only entry screen.
+- `client/src/screens/SettingsScreen.tsx` — Gemini key/model settings, with its query and save/clear mutations.
+- `client/src/screens/DemoScreen.tsx` — demo guide, README and live self-checks.
+- `client/src/screens/HomeScreen.tsx` — greeting, event list, settings/demo shortcuts.
+- `client/src/screens/WizardScreen.tsx` — 7-step wizard, payload normalisation, template/AI create mutations.
+- `client/src/plan/PlanScreen.tsx` — plan view: queries, edit sync, regen/restore/save mutations, audit-fix engine, derived totals.
+- `client/src/plan/tabs/*.tsx` — one component per plan tab: Overview, Budget, Venue, Food, People, Timeline, Audit, Versions, Summary.
+- `client/src/wizard.ts` — wizard state, manpower defaults and the pure per-step validator.
+- `client/src/selfchecks.ts` — browser self-checks against the verified demo case.
+- `client/src/plan-utils.ts` — pure plan helpers: venue suggestions, snapshot metrics, summary text, manpower-line sync.
+- `client/src/types.ts` — event/version/save-payload types derived from the server action contract.
+- `client/src/api.ts` — typed RPC client (action types only; no server runtime in the bundle).
+- `server/src/actions.ts` — build entry: aggregates the domain action groups, nothing else.
+- `server/src/actions-settings.ts` — get/save/clear Gemini settings actions.
+- `server/src/actions-events.ts` — template/AI creation, regeneration, reads, customise saves.
+- `server/src/actions-versions.ts` — version listing and restore.
+- `server/src/actions-checks.ts` — server-side self-checks.
+- `server/src/schemas.ts` — all zod request/response schemas and the 422 hardening.
+- `server/src/row-mapping.ts` — database row to API event shape (sanitises every stored array).
+- `server/src/versioning.ts` — snapshots, metric recalculation, version history.
+- `server/src/settings-store.ts` — Gemini key/model persistence and key masking.
+- `server/src/template.ts` — deterministic template plan engine.
+- `server/src/gemini.ts` — Gemini prompt, API call, response validation, one retry.
+- `server/src/wizard-input.ts` — wizard request schema and readable range checks.
+- `server/src/planner-core.ts` — the single shared maths module: budget, food, manpower, 12-rule audit, health, snapshot metrics, contrast (also imported by `tests/`).
+
 ## AI setup (bring your own key)
 
 1. Open **Settings / API Key** in Aegis.

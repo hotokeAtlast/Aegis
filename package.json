@@ -6,6 +6,7 @@
   "scripts": {
     "typecheck": "bun x tsc --noEmit -p client/tsconfig.json && bun x tsc --noEmit -p server/tsconfig.json",
     "test": "bun test tests/",
+    "format": "bun x prettier --write \"client/src/**/*.{ts,tsx}\" \"server/src/**/*.ts\"",
     "build": "bun run build:server && bun run build:client",
     "build:server": "cd server && bun build ./src/actions.ts --target=bun --outfile=./dist/actions.js",
     "build:client": "bun ./client/build.mjs"
