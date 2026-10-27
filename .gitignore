@@ -1,0 +1,30 @@
+# Dependencies & build output
+node_modules/
+.bun-cache/
+.space-build/
+client/dist/
+client/dist-cvm/
+server/dist/
+*.tsbuildinfo
+
+# Secrets — NEVER commit an API key. The Gemini key is entered in the app's
+# Settings screen and stored server-side only (shown masked); it is data,
+# not code, and must never appear in this repository.
+.env
+.env.*
+*.key
+*.pem
+
+# App data & saved settings — local state, not source code.
+# app.db holds saved events AND the Settings table (including the saved
+# Gemini key), so it must never be committed or shared as "test data".
+app.db
+app.db-shm
+app.db-wal
+*.db
+settings.json
+app-settings*.json
+
+# Local audit / probe artefacts
+audits/
+.harness/
