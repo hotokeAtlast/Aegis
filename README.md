@@ -160,15 +160,22 @@ its wizard step — never an opaque 422.
 
 Aegis is a fullstack app, not a static site, so deploy it as a Render
 Web Service, not a Static Site. The repo already contains `render.yaml`
-(Blueprint: free plan, Singapore, 1 GB persistent disk at `/data`,
-`DATABASE_PATH=/data/app.db`) and a `Dockerfile` (Bun).
+(Blueprint: free plan, Singapore) and a `Dockerfile` (Bun).
 
 - **Import:** Render → New → Blueprint → connect this repo. Render
-  reads `render.yaml` and creates the service, disk and env vars.
+  reads `render.yaml` and creates the service and env vars.
   Set `GEMINI_API_KEY` in the Render dashboard when prompted (it is
   `sync: false` in the yaml, so no key is ever committed); on first
   boot the server seeds it into Settings, where it can be changed or
   cleared in the app. Without a key, Aegis uses its template plan.
+- **Free-plan storage caveat:** Render does not support persistent
+  disks on the free plan, so the free Blueprint uses `DATABASE_PATH=./app.db`
+  on ephemeral storage — saved events and Settings do not survive a
+  redeploy or restart. For durable storage, change `plan:` to starter
+  (or higher), add a singular `disk:` block (`name: aegis-data`,
+  `mountPath: /data`, `sizeGB: 1` — note: `disk:`, not `disks:`), and
+  set `DATABASE_PATH=/data/app.db`. That is a paid plan, so it is not
+  the default here.
 - **How it runs:** `server/standalone.ts` serves the prebuilt client
   in `client/dist` and the same server actions as the Muse app over
   `POST /actions`, with SQLite migrations from `drizzle/` applied on

@@ -1,22 +1,41 @@
 # Aegis — Render Blueprint
 #
 # Import this file in Render (New > Blueprint, or connect hotokeAtlast/aegis
-# and let Render pick up render.yaml at the repo root) to create the service,
-# persistent disk and environment variables in one step, instead of setting
-# each one up by hand in the dashboard.
+# and let Render pick up render.yaml at the repo root) to create the service
+# and environment variables in one step, instead of setting each one up
+# by hand in the dashboard.
 #
 # What runs on Render: server/standalone.ts (Bun), serving the prebuilt
 # client in client/dist and the same server actions as the Muse app over
-# POST /actions, with SQLite at DATABASE_PATH on the persistent disk.
+# POST /actions, with SQLite at DATABASE_PATH.
 # The Dockerfile swaps the Muse-only space-sdk dependency for the
 # standalone shim (standalone/space-sdk-shim) inside the image only.
+#
+# Two Render rules this file respects (both caused Blueprint errors before):
+#   1. The disk field is singular `disk:`, not `disks:` — and, more
+#      importantly, Render does NOT support persistent disks on the free
+#      plan at all. So this Blueprint is free-plan-first: no disk, and
+#      DATABASE_PATH is ./app.db on the service's ephemeral filesystem.
+#      Saved events and Settings will NOT survive a redeploy or restart
+#      on free — that is fine for a demo, but it is not durable storage.
+#   2. For durable storage, change plan: to starter (or higher) and add:
+#        disk:
+#          name: aegis-data
+#          mountPath: /data
+#          sizeGB: 1
+#      and change DATABASE_PATH to /data/app.db. That is a paid plan,
+#      so it is left commented out here rather than silently costing you.
 #
 # Gemini key: never commit one to this repo. Either set GEMINI_API_KEY in
 # the Render dashboard (sync: false below, so Render prompts for it) and
 # it is seeded into app_settings on first boot, or leave it unset and add
 # the key later in the app's Settings screen — it is stored server-side
-# in the database on the persistent disk either way. Without a key, Aegis
-# falls back to its deterministic template plan, exactly as in Muse.
+# in the database either way. Without a key, Aegis falls back to its
+# deterministic template plan, exactly as in Muse.
+#
+# Free-plan note: the service spins down after 15 minutes idle, so the
+# first request after idle takes a while to wake up. That is a Render
+# free-plan behaviour, not an Aegis bug.
 
 services:
   - type: web
@@ -27,15 +46,11 @@ services:
     region: singapore
     autoDeploy: true
     healthCheckPath: /healthz
-    disks:
-      - name: aegis-data
-        mountPath: /data
-        sizeGB: 1
     envVars:
       - key: NODE_ENV
         value: production
       - key: DATABASE_PATH
-        value: /data/app.db
+        value: ./app.db
       # Render injects PORT itself; do not set it here.
       # Set this in the Render dashboard after import. sync: false means
       # Render will prompt for it instead of reading a value from this file.
