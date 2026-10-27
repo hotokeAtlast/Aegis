@@ -1,0 +1,54 @@
+# Aegis — Render Blueprint
+#
+# Import this file in Render (New > Blueprint, or connect hotokeAtlast/aegis
+# and let Render pick up render.yaml at the repo root) to create the service,
+# persistent disk and environment variables in one step, instead of setting
+# each one up by hand in the dashboard.
+#
+# IMPORTANT — READ BEFORE YOU HIT DEPLOY:
+# This blueprint declares the intended Render service, but it is NOT yet a
+# working deploy of Aegis as-is. Aegis currently runs on Muse's space runtime:
+# its server actions are defined with @hatch/space-sdk and served by that
+# runtime, and its database is a local app.db file. There is no standalone
+# Bun server entrypoint in this repo yet, so the Dockerfile CMD is
+# intentionally a clear placeholder that fails fast, rather than a fake
+# server that would serve a broken app.
+#
+# What is still needed before a first successful Render deploy:
+#   1. A standalone server entrypoint that serves client/dist, handles
+#      POST /actions with a drizzle SQLite context (ctx.db), and runs the
+#      drizzle migrations in drizzle/ against DATABASE_PATH on first boot.
+#   2. That entrypoint's path put into the Dockerfile CMD.
+#   3. A Gemini key set in the Render dashboard (see GEMINI_API_KEY below) —
+#      never committed to this repo. The app's Settings screen stores the key
+#      server-side in the database on the persistent disk once the server
+#      exists, so the env var is only needed if the standalone server is
+#      wired to read it.
+#
+# Until step 1 lands, import this blueprint with autoDeploy: false (below)
+# so Render creates the service without immediately running a deploy that
+# is known to fail. Flip autoDeploy to true once the Dockerfile CMD is real.
+
+services:
+  - type: web
+    name: aegis
+    env: docker
+    dockerfilePath: ./Dockerfile
+    plan: free
+    region: singapore
+    autoDeploy: false
+    healthCheckPath: /
+    disks:
+      - name: aegis-data
+        mountPath: /data
+        sizeGB: 1
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_PATH
+        value: /data/app.db
+      # Render injects PORT itself; do not set it here.
+      # Set this in the Render dashboard after import. sync: false means
+      # Render will prompt for it instead of reading a value from this file.
+      - key: GEMINI_API_KEY
+        sync: false
